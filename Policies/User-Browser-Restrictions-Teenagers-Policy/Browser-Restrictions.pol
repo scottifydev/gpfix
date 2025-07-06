@@ -1,0 +1,86 @@
+Windows Registry Editor Version 5.00
+
+; Chrome Browser Restrictions for Teenagers
+; Domain pattern: Use parameter when converting to GPO
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome]
+; Force users to sign in to Chrome
+"BrowserSignin"=dword:00000002
+
+; Restrict sign-in to domain pattern (to be configured during deployment)
+; This value will be replaced by the conversion script
+"RestrictSigninToPattern"="*@domain.com"
+
+; Disable Incognito Mode completely
+"IncognitoModeAvailability"=dword:00000001
+
+; Force Safe Search
+"ForceSafeSearch"=dword:00000001
+
+; Force Google SafeSearch
+"ForceGoogleSafeSearch"=dword:00000001
+
+; Force YouTube Restricted Mode
+"ForceYouTubeRestrict"=dword:00000002
+
+; Disable Developer Tools
+"DeveloperToolsDisabled"=dword:00000001
+
+; Block access to chrome://flags
+"BlockExternalExtensions"=dword:00000001
+
+; Disable password manager
+"PasswordManagerEnabled"=dword:00000000
+
+; Enable sync (to track browsing)
+"SyncDisabled"=dword:00000000
+
+; URL Blacklist - Block common VPN and proxy sites
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\URLBlocklist]
+"1"="*://*.vpn.com/*"
+"2"="*://*.proxy.com/*"
+"3"="*://*.hideip.com/*"
+"4"="*://*.torproject.org/*"
+"5"="*://chrome.google.com/webstore/*"
+
+; Extension Installation Whitelist (empty = block all)
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallWhitelist]
+; No extensions allowed for teenagers
+
+; Disable other browsers via AppLocker
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\SrpV2]
+"EnforcementMode"=dword:00000001
+
+; Microsoft Edge - Disable completely
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge]
+"Enabled"=dword:00000000
+
+; Block Edge via multiple methods
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main]
+"PreventAccessToAboutFlagsInMicrosoftEdge"=dword:00000001
+"AllowPrelaunch"=dword:00000000
+
+; Windows Security Settings
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System]
+; Disable Command Prompt
+"DisableCMD"=dword:00000002
+
+; Disable Registry Editor
+[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
+"DisableRegistryTools"=dword:00000001
+
+; Disable Task Manager for teenagers
+"DisableTaskMgr"=dword:00000001
+
+; Windows Defender Application Control
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard]
+"EnableVirtualizationBasedSecurity"=dword:00000001
+"RequirePlatformSecurityFeatures"=dword:00000001
+
+; DNS Client Settings - Force safe DNS
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient]
+"EnableMulticast"=dword:00000000
+
+; Family Safety Integration
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\FamilySafety]
+"EnableFamilySafety"=dword:00000001

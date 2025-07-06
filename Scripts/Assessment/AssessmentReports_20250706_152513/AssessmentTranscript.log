@@ -1,0 +1,54 @@
+**********************
+PowerShell transcript start
+Start time: 20250706152513
+Username: Scottify-Laptop\root
+RunAs User: Scottify-Laptop\root
+Configuration Name: 
+Machine: Scottify-Laptop (Unix 6.6.87.2)
+Host Application: /opt/microsoft/powershell/7/pwsh.dll -NoProfile -Command & { try { .\Scripts\Assessment\Deploy-ComprehensiveAssessment.ps1 -FastMode } catch { Write-Host 'Expected error: /tmp/claude-shell-snapshot-9312' -ForegroundColor Yellow } }
+Process ID: 73696
+PSVersion: 7.5.1
+PSEdition: Core
+GitCommitId: 7.5.1
+OS: Ubuntu 24.04.2 LTS
+Platform: Unix
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+Transcript started, output file is /home/scottify/group_policy/GroupPolicy/Scripts/Assessment\AssessmentReports_20250706_152513\AssessmentTranscript.log
+=== Comprehensive Group Policy Environment Assessment ===
+Assessment Date: 07/06/2025 15:25:13
+Output Path: /home/scottify/group_policy/GroupPolicy/Scripts/Assessment\AssessmentReports_20250706_152513
+
+
+=== Phase: Infrastructure ===
+Running: Test-DomainControllerHealth.ps1
+PS>TerminatingError(Test-DomainControllerHealth.ps1): "A parameter cannot be found that matches parameter name 'OutputPath'."
+  ✗ Failed: A parameter cannot be found that matches parameter name 'OutputPath'.
+Running: Test-GPOInfrastructure.ps1
+PS>TerminatingError(Import-Module): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: The specified module 'ActiveDirectory' was not loaded because no valid module file was found in any module directory."
+>> TerminatingError(Import-Module): "The running command stopped because the preference variable "ErrorActionPreference" or common parameter is set to Stop: The specified module 'ActiveDirectory' was not loaded because no valid module file was found in any module directory."
+  ✗ Failed: The specified module 'ActiveDirectory' was not loaded because no valid module file was found in any module directory.
+
+Critical phase failed! Stopping assessment.
+
+=== Generating Consolidated Report ===
+Get-ChildItem: /home/scottify/group_policy/GroupPolicy/Scripts/Assessment/Deploy-ComprehensiveAssessment.ps1:202
+Line |
+ 202 |  … finalCheckResult = Get-Content (Get-ChildItem $finalCheckPath | Selec …
+     |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Cannot find path '/home/scottify/group_policy/GroupPolicy/Scripts/Assessment/AssessmentReports_20250706_152513/Test-FinalHealthCheck' because it does not exist.
+Get-ChildItem: /home/scottify/group_policy/GroupPolicy/Scripts/Assessment/Deploy-ComprehensiveAssessment.ps1:202
+Line |
+ 202 |  … finalCheckResult = Get-Content (Get-ChildItem $finalCheckPath | Selec …
+     |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Cannot find path
+     | '/home/scottify/group_policy/GroupPolicy/Scripts/Assessment/AssessmentReports_20250706_152513/Test-FinalHealthCheck' because it does not exist.
+
+PS>TerminatingError(Get-Content): "Cannot bind argument to parameter 'Path' because it is null."
+>> TerminatingError(Deploy-ComprehensiveAssessment.ps1): "Cannot bind argument to parameter 'Path' because it is null."
+Expected error: /tmp/claude-shell-snapshot-9312
+PS>$global:?
+True

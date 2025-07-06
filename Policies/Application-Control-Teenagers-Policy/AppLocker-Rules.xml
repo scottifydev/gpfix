@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppLockerPolicy Version="1">
+  <RuleCollection Type="Exe" EnforcementMode="Enabled">
+    <!-- Default rules to allow Windows and Program Files -->
+    <FilePathRule Id="921cc481-6e17-4653-8f75-050b80acca20" Name="Allow Windows" Description="Allow all files located in the Windows folder" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%WINDIR%\*" />
+      </Conditions>
+      <Exceptions>
+        <FilePathCondition Path="%WINDIR%\Temp\*" />
+        <FilePathCondition Path="%WINDIR%\Tasks\*" />
+        <FilePathCondition Path="%WINDIR%\Tracing\*" />
+      </Exceptions>
+    </FilePathRule>
+    
+    <FilePathRule Id="a61c8b2c-a319-4cd0-9690-d2177cad7b51" Name="Allow Program Files" Description="Allow files in Program Files" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%PROGRAMFILES%\*" />
+      </Conditions>
+    </FilePathRule>
+
+    <!-- Steam Publisher Rule -->
+    <FilePublisherRule Id="32c27f3a-8a87-4f9e-8e43-5d5c5306c9cd" Name="Allow Steam by Valve Corporation" Description="Allow all Steam executables signed by Valve" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="O=VALVE CORPORATION, L=BELLEVUE, S=WASHINGTON, C=US" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="*" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+
+    <!-- Steam Path Rule (backup) -->
+    <FilePathRule Id="8f6b5e3d-7a92-4e38-9632-2e8c9a7f5d21" Name="Allow Steam Path" Description="Allow Steam installation directory" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%PROGRAMFILES(X86)%\Steam\*" />
+      </Conditions>
+    </FilePathRule>
+
+    <!-- Epic Games Publisher Rule -->
+    <FilePublisherRule Id="45d7a9c1-5b8e-4a32-8f2e-1c9d7e6f3a12" Name="Allow Epic Games" Description="Allow all Epic Games executables" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="CN=EPIC GAMES INC, O=EPIC GAMES INC, L=CARY, S=NORTH CAROLINA, C=US" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="*" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+
+    <!-- Epic Games Path Rule (backup) -->
+    <FilePathRule Id="7c8e9f2a-3d5b-4e71-a982-5f7c8e9d1b34" Name="Allow Epic Games Path" Description="Allow Epic Games installation directory" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%PROGRAMFILES%\Epic Games\*" />
+      </Conditions>
+    </FilePathRule>
+
+    <!-- Default Deny Rule -->
+    <FilePathRule Id="fd686d83-a829-4351-8ff4-27c7de5755d2" Name="Deny everything else" Description="Deny execution of all other files" UserOrGroupSid="S-1-1-0" Action="Deny">
+      <Conditions>
+        <FilePathCondition Path="*" />
+      </Conditions>
+    </FilePathRule>
+  </RuleCollection>
+
+  <!-- Script Rules -->
+  <RuleCollection Type="Script" EnforcementMode="Enabled">
+    <FilePathRule Id="06dce67b-934c-454f-a263-2e2c5a3b7d8a" Name="Allow scripts in Windows" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%WINDIR%\*" />
+      </Conditions>
+      <Exceptions>
+        <FilePathCondition Path="%WINDIR%\Temp\*" />
+      </Exceptions>
+    </FilePathRule>
+    
+    <FilePathRule Id="9421c53f-7b29-42b8-9d3d-6ce8a8b7e6d1" Name="Deny all other scripts" Description="" UserOrGroupSid="S-1-1-0" Action="Deny">
+      <Conditions>
+        <FilePathCondition Path="*" />
+      </Conditions>
+    </FilePathRule>
+  </RuleCollection>
+
+  <!-- Windows Installer Rules -->
+  <RuleCollection Type="Msi" EnforcementMode="AuditOnly">
+    <FilePublisherRule Id="b7af7102-efde-4369-8a89-7a6a392d1473" Name="Allow digitally signed Windows Installer files" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="*" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="0.0.0.0" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+    
+    <FilePathRule Id="5b290184-345a-4453-b184-45305f6d9a54" Name="Allow all Windows Installer files in Windows folder" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%WINDIR%\Installer\*" />
+      </Conditions>
+    </FilePathRule>
+  </RuleCollection>
+
+  <!-- Packaged App Rules -->
+  <RuleCollection Type="Appx" EnforcementMode="AuditOnly">
+    <FilePublisherRule Id="a9e18c21-ff8f-43cf-b9fc-db40eed693ba" Name="Allow all signed packaged apps" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="*" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="0.0.0.0" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+  </RuleCollection>
+</AppLockerPolicy>
