@@ -92,8 +92,27 @@ function Run-AssessmentPhase {
     }
     
     foreach ($script in $Scripts) {
-        $scriptPath = Join-Path $PSScriptRoot $script
-        $scriptName = [System.IO.Path]::GetFileNameWithoutExtension($script)
+        # Handle empty PSScriptRoot (e.g., when run from different context)
+        $currentPath = if ([string]::IsNullOrEmpty($PSScriptRoot)) {
+            Split-Path -Parent $MyInvocation.MyCommand.Path
+        } else {
+            $PSScriptRoot
+        }
+        
+        # Fallback if still empty
+        if ([string]::IsNullOrEmpty($currentPath)) {
+            $currentPath = (Get-Location).Path
+        }
+        
+        $scriptPath = Join-Path $currentPath $script
+        
+        # Handle constrained language mode
+        $scriptName = if ($ExecutionContext.SessionState.LanguageMode -eq 'ConstrainedLanguage') {
+            # Simple string manipulation for constrained mode
+            $script -replace '\.ps1$', ''
+        } else {
+            [System.IO.Path]::GetFileNameWithoutExtension($script)
+        }
         
         if (Test-Path $scriptPath) {
             Write-Host "Running: $script" -ForegroundColor White
