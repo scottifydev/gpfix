@@ -162,10 +162,10 @@ function Show-DeploymentSummary {
 function Invoke-CodeValidation {
     Write-InfoLog "Running PowerShell code validation..."
     
-    $scriptPath = Join-Path $PSScriptRoot "smart-lint.ps1"
+    $scriptPath = Join-Path $PSScriptRoot "Test-SmartLint.ps1"
     if (-not (Test-Path $scriptPath)) {
         Update-CheckStatus -Check "CodeValidation" -Status "Failed" `
-            -Issues @("smart-lint.ps1 not found in hooks directory")
+            -Issues @("Test-SmartLint.ps1 not found in hooks directory")
         return $false
     }
     
@@ -191,10 +191,10 @@ function Invoke-CodeValidation {
 function Invoke-GPOValidation {
     Write-InfoLog "Running GPO validation..."
     
-    $scriptPath = Join-Path $PSScriptRoot "validate-gpo.ps1"
+    $scriptPath = Join-Path $PSScriptRoot "Test-GPOValidation.ps1"
     if (-not (Test-Path $scriptPath)) {
         Update-CheckStatus -Check "GPOValidation" -Status "Failed" `
-            -Issues @("validate-gpo.ps1 not found in hooks directory")
+            -Issues @("Test-GPOValidation.ps1 not found in hooks directory")
         return $false
     }
     

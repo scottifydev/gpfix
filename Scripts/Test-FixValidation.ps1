@@ -127,15 +127,15 @@ $validationScripts = @(
         Name = "GP_Codebase Integrity Check"
     },
     @{
-        Path = Join-Path (Split-Path $PSScriptRoot) "hooks/smart-lint.ps1"
+        Path = Join-Path (Split-Path $PSScriptRoot) "hooks/Test-SmartLint.ps1"
         Name = "GP_Smart Linting"
     },
     @{
-        Path = Join-Path (Split-Path $PSScriptRoot) "hooks/validate-gpo.ps1"
+        Path = Join-Path (Split-Path $PSScriptRoot) "hooks/Test-GPOValidation.ps1"
         Name = "GP_GPO Validation"
     },
     @{
-        Path = Join-Path (Split-Path $PSScriptRoot) "hooks/pre-deployment-check.ps1"
+        Path = Join-Path (Split-Path $PSScriptRoot) "hooks/Test-PreDeployment.ps1"
         Name = "GP_Pre-Deployment Check"
     }
 )
