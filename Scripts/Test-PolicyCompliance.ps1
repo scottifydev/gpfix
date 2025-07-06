@@ -230,17 +230,17 @@ if ($testResults.FailedTests -gt 0) {
     Write-Host "`n=== Recommendations ===" -ForegroundColor $script:InfoColor
     
     if (-not $isAdmin) {
-        Write-Host "• Run this script as Administrator for accurate results" -ForegroundColor $script:WarnColor
+        Write-Host "- Run this script as Administrator for accurate results" -ForegroundColor $script:WarnColor
     }
     
     if (-not $gpApplied) {
-        Write-Host "• Ensure the GP_Teenager_Restrictions_Policy GPO is linked to the correct OU" -ForegroundColor $script:WarnColor
-        Write-Host "• Run 'gpupdate /force' to refresh Group Policy" -ForegroundColor $script:WarnColor
+        Write-Host "- Ensure the GP_Teenager_Restrictions_Policy GPO is linked to the correct OU" -ForegroundColor $script:WarnColor
+        Write-Host "- Run 'gpupdate /force' to refresh Group Policy" -ForegroundColor $script:WarnColor
     }
     
     if (-not $appLockerRunning) {
-        Write-Host "• Start the Application Identity service: Start-Service AppIDSvc" -ForegroundColor $script:WarnColor
-        Write-Host "• Set the service to start automatically" -ForegroundColor $script:WarnColor
+        Write-Host "- Start the Application Identity service: Start-Service AppIDSvc" -ForegroundColor $script:WarnColor
+        Write-Host "- Set the service to start automatically" -ForegroundColor $script:WarnColor
     }
 }
 

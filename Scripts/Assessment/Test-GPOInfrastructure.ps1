@@ -112,15 +112,15 @@ function Test-ServiceStatus {
     try {
         $Service = Get-Service -ComputerName $ComputerName -Name $ServiceName -ErrorAction Stop
         if ($Service.Status -eq 'Running') {
-            Write-ColoredOutput "✓ $DisplayName is running on $ComputerName" -Type Success
+            Write-ColoredOutput "[OK] $DisplayName is running on $ComputerName" -Type Success
             return $true
         } else {
-            Write-ColoredOutput "✗ $DisplayName is $($Service.Status) on $ComputerName" -Type Error
+            Write-ColoredOutput "[X] $DisplayName is $($Service.Status) on $ComputerName" -Type Error
             $script:Recommendations += "Start the $DisplayName service on $ComputerName"
             return $false
         }
     } catch {
-        Write-ColoredOutput "✗ Failed to query $DisplayName on $ComputerName`: $_" -Type Error
+        Write-ColoredOutput "[X] Failed to query $DisplayName on $ComputerName`: $_" -Type Error
         return $false
     }
 }
@@ -136,7 +136,7 @@ function Test-SYSVOLShare {
     try {
         # Test share accessibility
         if (Test-Path $SharePath) {
-            Write-ColoredOutput "✓ SYSVOL share is accessible on $DCName" -Type Success
+            Write-ColoredOutput "[OK] SYSVOL share is accessible on $DCName" -Type Success
             
             # Check permissions
             $Acl = Get-Acl $SharePath -ErrorAction Stop
@@ -144,33 +144,33 @@ function Test-SYSVOLShare {
             
             if ($AuthenticatedUsers) {
                 if ($AuthenticatedUsers.FileSystemRights -match "ReadAndExecute") {
-                    Write-ColoredOutput "✓ Authenticated Users have proper read permissions" -Type Success
+                    Write-ColoredOutput "[OK] Authenticated Users have proper read permissions" -Type Success
                 } else {
-                    Write-ColoredOutput "✗ Authenticated Users permissions are incorrect" -Type Warning
+                    Write-ColoredOutput "[X] Authenticated Users permissions are incorrect" -Type Warning
                     $script:Recommendations += "Fix Authenticated Users permissions on $SharePath"
                 }
             } else {
-                Write-ColoredOutput "✗ Authenticated Users not found in SYSVOL permissions" -Type Error
+                Write-ColoredOutput "[X] Authenticated Users not found in SYSVOL permissions" -Type Error
                 $script:Recommendations += "Add Authenticated Users with Read & Execute permissions to $SharePath"
             }
             
             # Check for SYSVOL junction points
             $SysvolPath = Join-Path $SharePath $DomainName
             if (Test-Path $SysvolPath) {
-                Write-ColoredOutput "✓ Domain SYSVOL folder exists" -Type Success
+                Write-ColoredOutput "[OK] Domain SYSVOL folder exists" -Type Success
             } else {
-                Write-ColoredOutput "✗ Domain SYSVOL folder missing at $SysvolPath" -Type Error
+                Write-ColoredOutput "[X] Domain SYSVOL folder missing at $SysvolPath" -Type Error
                 $script:Recommendations += "Investigate missing domain SYSVOL folder on $DCName"
             }
             
             return $true
         } else {
-            Write-ColoredOutput "✗ SYSVOL share is not accessible on $DCName" -Type Error
+            Write-ColoredOutput "[X] SYSVOL share is not accessible on $DCName" -Type Error
             $script:Recommendations += "Verify SYSVOL share configuration on $DCName"
             return $false
         }
     } catch {
-        Write-ColoredOutput "✗ Error checking SYSVOL on $DCName`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking SYSVOL on $DCName`: $_" -Type Error
         return $false
     }
 }
@@ -185,7 +185,7 @@ function Test-PolicyDefinitions {
     
     try {
         if (Test-Path $PolicyDefinitionsPath) {
-            Write-ColoredOutput "✓ PolicyDefinitions folder exists" -Type Success
+            Write-ColoredOutput "[OK] PolicyDefinitions folder exists" -Type Success
             
             # Count ADMX files
             $ADMXFiles = Get-ChildItem -Path $PolicyDefinitionsPath -Filter "*.admx" -ErrorAction Stop
@@ -195,7 +195,7 @@ function Test-PolicyDefinitions {
             Write-ColoredOutput "  Found $($ADMLFolders.Count) language folders" -Type Info
             
             if ($ADMXFiles.Count -eq 0) {
-                Write-ColoredOutput "✗ No ADMX files found in PolicyDefinitions" -Type Warning
+                Write-ColoredOutput "[X] No ADMX files found in PolicyDefinitions" -Type Warning
                 $script:Recommendations += "Deploy ADMX templates to Central Store on $DCName"
             }
             
@@ -214,7 +214,7 @@ function Test-PolicyDefinitions {
             return $false
         }
     } catch {
-        Write-ColoredOutput "✗ Error checking PolicyDefinitions`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking PolicyDefinitions`: $_" -Type Error
         return $false
     }
 }
@@ -242,18 +242,18 @@ function Test-GPOVersionConsistency {
         }
         
         if ($InconsistentGPOs.Count -gt 0) {
-            Write-ColoredOutput "✗ Found $($InconsistentGPOs.Count) GPOs with version inconsistencies:" -Type Error
+            Write-ColoredOutput "[X] Found $($InconsistentGPOs.Count) GPOs with version inconsistencies:" -Type Error
             foreach ($GPO in $InconsistentGPOs) {
                 Write-ColoredOutput "  - $($GPO.Name) (AD: $($GPO.ADVersion), SYSVOL: $($GPO.SysvolVersion))" -Type Error
             }
             $script:Recommendations += "Force replication or recreate GPOs with version mismatches"
         } else {
-            Write-ColoredOutput "✓ All GPO versions are consistent between AD and SYSVOL" -Type Success
+            Write-ColoredOutput "[OK] All GPO versions are consistent between AD and SYSVOL" -Type Success
         }
         
         return $InconsistentGPOs
     } catch {
-        Write-ColoredOutput "✗ Error checking GPO version consistency`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking GPO version consistency`: $_" -Type Error
         return @()
     }
 }
@@ -280,18 +280,18 @@ function Test-OrphanedGPOs {
         }
         
         if ($OrphanedFolders.Count -gt 0) {
-            Write-ColoredOutput "✗ Found $($OrphanedFolders.Count) orphaned GPO folders in SYSVOL:" -Type Warning
+            Write-ColoredOutput "[X] Found $($OrphanedFolders.Count) orphaned GPO folders in SYSVOL:" -Type Warning
             foreach ($Folder in $OrphanedFolders) {
                 Write-ColoredOutput "  - $Folder" -Type Warning
             }
             $script:Recommendations += "Remove orphaned GPO folders from SYSVOL to free up space"
         } else {
-            Write-ColoredOutput "✓ No orphaned GPO folders found" -Type Success
+            Write-ColoredOutput "[OK] No orphaned GPO folders found" -Type Success
         }
         
         return $OrphanedFolders
     } catch {
-        Write-ColoredOutput "✗ Error checking for orphaned GPOs`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking for orphaned GPOs`: $_" -Type Error
         return @()
     }
 }
@@ -324,12 +324,12 @@ function Test-UnlinkedGPOs {
             }
             $script:Recommendations += "Review and remove unlinked GPOs if no longer needed"
         } else {
-            Write-ColoredOutput "✓ All GPOs are linked" -Type Success
+            Write-ColoredOutput "[OK] All GPOs are linked" -Type Success
         }
         
         return $UnlinkedGPOs
     } catch {
-        Write-ColoredOutput "✗ Error checking for unlinked GPOs`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking for unlinked GPOs`: $_" -Type Error
         return @()
     }
 }
@@ -357,17 +357,17 @@ function Test-WMIFilters {
                 if ($FilterQuery -match 'WQL;(.+);') {
                     $WQLQuery = $Matches[1]
                     $TestQuery = Get-WmiObject -Query $WQLQuery -ErrorAction Stop
-                    Write-ColoredOutput "  ✓ WMI Filter '$FilterName' syntax is valid" -Type Success
+                    Write-ColoredOutput "  [OK] WMI Filter '$FilterName' syntax is valid" -Type Success
                 }
             } catch {
-                Write-ColoredOutput "  ✗ WMI Filter '$FilterName' has invalid syntax" -Type Error
+                Write-ColoredOutput "  [X] WMI Filter '$FilterName' has invalid syntax" -Type Error
                 $script:Recommendations += "Fix or remove invalid WMI filter: $FilterName"
             }
         }
         
         return $true
     } catch {
-        Write-ColoredOutput "✗ Error checking WMI filters`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking WMI filters`: $_" -Type Error
         return $false
     }
 }
@@ -420,23 +420,23 @@ function Test-GPOReplication {
                     }
                 }
             } catch {
-                Write-ColoredOutput "  ✗ Failed to check replication with $($DC.HostName)`: $_" -Type Error
+                Write-ColoredOutput "  [X] Failed to check replication with $($DC.HostName)`: $_" -Type Error
             }
         }
         
         if ($ReplicationIssues.Count -gt 0) {
-            Write-ColoredOutput "✗ Found $($ReplicationIssues.Count) replication issues:" -Type Error
+            Write-ColoredOutput "[X] Found $($ReplicationIssues.Count) replication issues:" -Type Error
             foreach ($Issue in $ReplicationIssues) {
                 Write-ColoredOutput "  - $($Issue.DC): $($Issue.Issue) for $($Issue.GPOName)" -Type Error
             }
             $script:Recommendations += "Force AD replication or investigate replication topology"
         } else {
-            Write-ColoredOutput "✓ GPO replication is consistent across all domain controllers" -Type Success
+            Write-ColoredOutput "[OK] GPO replication is consistent across all domain controllers" -Type Success
         }
         
         return $ReplicationIssues
     } catch {
-        Write-ColoredOutput "✗ Error checking GPO replication`: $_" -Type Error
+        Write-ColoredOutput "[X] Error checking GPO replication`: $_" -Type Error
         return @()
     }
 }
@@ -453,9 +453,9 @@ function Test-ClientGPProcessing {
         # Run gpresult
         $GPResult = gpresult /r /scope:computer
         if ($LASTEXITCODE -eq 0) {
-            Write-ColoredOutput "✓ Group Policy processing completed successfully" -Type Success
+            Write-ColoredOutput "[OK] Group Policy processing completed successfully" -Type Success
         } else {
-            Write-ColoredOutput "✗ Group Policy processing failed with exit code: $LASTEXITCODE" -Type Error
+            Write-ColoredOutput "[X] Group Policy processing failed with exit code: $LASTEXITCODE" -Type Error
             $script:Recommendations += "Investigate Group Policy processing errors on clients"
         }
         
@@ -469,7 +469,7 @@ function Test-ClientGPProcessing {
                 Write-ColoredOutput "! Group Policy last applied $([int]$TimeSinceApplied.TotalHours) hours ago" -Type Warning
                 $script:Recommendations += "Investigate why Group Policy hasn't refreshed recently"
             } else {
-                Write-ColoredOutput "✓ Group Policy applied recently ($([int]$TimeSinceApplied.TotalMinutes) minutes ago)" -Type Success
+                Write-ColoredOutput "[OK] Group Policy applied recently ($([int]$TimeSinceApplied.TotalMinutes) minutes ago)" -Type Success
             }
         }
         
@@ -477,13 +477,13 @@ function Test-ClientGPProcessing {
         Write-ColoredOutput "  Testing manual Group Policy refresh..." -Type Info
         $RefreshResult = gpupdate /force
         if ($LASTEXITCODE -eq 0) {
-            Write-ColoredOutput "  ✓ Manual Group Policy refresh successful" -Type Success
+            Write-ColoredOutput "  [OK] Manual Group Policy refresh successful" -Type Success
         } else {
-            Write-ColoredOutput "  ✗ Manual Group Policy refresh failed" -Type Error
+            Write-ColoredOutput "  [X] Manual Group Policy refresh failed" -Type Error
         }
         
     } catch {
-        Write-ColoredOutput "✗ Error testing client GP processing`: $_" -Type Error
+        Write-ColoredOutput "[X] Error testing client GP processing`: $_" -Type Error
     }
 }
 
@@ -554,13 +554,13 @@ if (-not $SkipClientTests) {
     try {
         $GPErrors = Get-WinEvent -FilterHashtable @{LogName='GP_System'; ID=1085,1006,1030,1058,1053} -MaxEvents 10 -ErrorAction SilentlyContinue
         if ($GPErrors) {
-            Write-ColoredOutput "✗ Found $($GPErrors.Count) Group Policy errors in event log" -Type Error
+            Write-ColoredOutput "[X] Found $($GPErrors.Count) Group Policy errors in event log" -Type Error
             foreach ($Event in $GPErrors | Select-Object -First 5) {
                 Write-ColoredOutput "  - Event $($Event.Id): $($Event.Message.Split("`n")[0])" -Type Error
             }
             $script:Recommendations += "Review and resolve Group Policy errors in event log"
         } else {
-            Write-ColoredOutput "✓ No recent Group Policy errors in event log" -Type Success
+            Write-ColoredOutput "[OK] No recent Group Policy errors in event log" -Type Success
         }
     } catch {
         Write-ColoredOutput "  Unable to query event log" -Type Warning

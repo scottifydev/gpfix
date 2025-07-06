@@ -422,7 +422,8 @@ if ($ExportFormat -eq "JSON" -or $ExportFormat -eq "Both") {
 # Generate Summary Report
 Write-Host "`nGenerating summary report..." -ForegroundColor Yellow
 
-$summaryReport = @"
+$summaryReportBuilder = New-Object System.Text.StringBuilder
+[void]$summaryReportBuilder.AppendLine(@"
 ================================================================================
                         GROUP POLICY INVENTORY SUMMARY REPORT
 ================================================================================
@@ -469,25 +470,25 @@ OUs with Linked GPOs: $($OUStructure | Where-Object { $_.LinkedGPOCount -gt 0 } 
 
 TOP 10 MOST LINKED GPOs
 ----------------------
-"@
+"@)
 
 $topLinkedGPOs = $GPOLinks | Group-Object GPOName | Sort-Object Count -Descending | Select-Object -First 10
 foreach ($gpo in $topLinkedGPOs) {
-    $summaryReport += "`n$($gpo.Name): $($gpo.Count) links"
+    [void]$summaryReportBuilder.AppendLine("$($gpo.Name): $($gpo.Count) links")
 }
 
-$summaryReport += @"
+[void]$summaryReportBuilder.AppendLine(@"
 
 RECENTLY MODIFIED GPOs (Last 30 Days)
 ------------------------------------
-"@
+"@)
 
 $recentGPOs = $GPOInventory | Where-Object { $_.ModificationTime -gt (Get-Date).AddDays(-30) } | Sort-Object ModificationTime -Descending
 foreach ($gpo in $recentGPOs) {
-    $summaryReport += "`n$($gpo.DisplayName) - Modified: $($gpo.ModificationTime.ToString('yyyy-MM-dd'))"
+    [void]$summaryReportBuilder.AppendLine("$($gpo.DisplayName) - Modified: $($gpo.ModificationTime.ToString('yyyy-MM-dd'))")
 }
 
-$summaryReport += @"
+[void]$summaryReportBuilder.AppendLine(@"
 
 GPO PROCESSING ORDER AND PRECEDENCE
 ----------------------------------
@@ -503,82 +504,83 @@ Later processed GPOs override earlier ones unless blocked by:
 - Block Inheritance (blocks non-enforced GPOs from parent containers)
 
 DOMAIN-LINKED GPOs (Highest Level)
-"@
+"@)
 
 $domainLinkedGPOs = $GPOLinks | Where-Object { $_.LinkType -eq "Domain" } | Sort-Object LinkOrder
 foreach ($link in $domainLinkedGPOs) {
-    $summaryReport += "`n  Order $($link.LinkOrder): $($link.GPOName) $(if (-not $link.LinkEnabled) { '[DISABLED]' })"
+    [void]$summaryReportBuilder.AppendLine("  Order $($link.LinkOrder): $($link.GPOName) $(if (-not $link.LinkEnabled) { '[DISABLED]' })")
 }
 
-$summaryReport += @"
+[void]$summaryReportBuilder.AppendLine(@"
 
 TEENAGER/YOUTH TARGETED GPOs
 ---------------------------
-"@
+"@)
 
 if ($TeenagerGPOs.Count -gt 0) {
     foreach ($gpo in $TeenagerGPOs) {
-        $summaryReport += "`n- $($gpo.DisplayName)"
+        [void]$summaryReportBuilder.AppendLine("- $($gpo.DisplayName)")
         if ($gpo.TargetedGroups) {
-            $summaryReport += "`n  Target Groups: $($gpo.TargetedGroups)"
+            [void]$summaryReportBuilder.AppendLine("  Target Groups: $($gpo.TargetedGroups)")
         }
     }
 } else {
-    $summaryReport += "`nNo GPOs found with explicit teenager/youth targeting."
+    [void]$summaryReportBuilder.AppendLine("No GPOs found with explicit teenager/youth targeting.")
 }
 
-$summaryReport += @"
+[void]$summaryReportBuilder.AppendLine(@"
 
 APPLOCKER POLICY GPOs
 --------------------
-"@
+"@)
 
 if ($AppLockerGPOs.Count -gt 0) {
     foreach ($gpo in $AppLockerGPOs) {
-        $summaryReport += "`n- $($gpo.DisplayName)"
+        [void]$summaryReportBuilder.AppendLine("- $($gpo.DisplayName)")
         if ($gpo.AppLockerDetails) {
-            $summaryReport += "`n  Details: $($gpo.AppLockerDetails)"
+            [void]$summaryReportBuilder.AppendLine("  Details: $($gpo.AppLockerDetails)")
         }
     }
 } else {
-    $summaryReport += "`nNo GPOs found with AppLocker policies."
+    [void]$summaryReportBuilder.AppendLine("No GPOs found with AppLocker policies.")
 }
 
-$summaryReport += @"
+[void]$summaryReportBuilder.AppendLine(@"
 
 BROWSER RESTRICTION GPOs
 -----------------------
-"@
+"@)
 
 if ($BrowserGPOs.Count -gt 0) {
     foreach ($gpo in $BrowserGPOs) {
-        $summaryReport += "`n- $($gpo.DisplayName)"
+        [void]$summaryReportBuilder.AppendLine("- $($gpo.DisplayName)")
         $browsers = @()
         if ($gpo.HasChromeRestrictions) { $browsers += "Chrome" }
         if ($gpo.HasEdgeRestrictions) { $browsers += "Edge" }
         if ($gpo.HasFirefoxRestrictions) { $browsers += "Firefox" }
         if ($gpo.HasIERestrictions) { $browsers += "IE" }
-        $summaryReport += "`n  Browsers: $($browsers -join ', ')"
+        [void]$summaryReportBuilder.AppendLine("  Browsers: $($browsers -join ', ')")
         if ($gpo.BrowserRestrictionDetails) {
-            $summaryReport += "`n  Details: $($gpo.BrowserRestrictionDetails)"
+            [void]$summaryReportBuilder.AppendLine("  Details: $($gpo.BrowserRestrictionDetails)")
         }
     }
 } else {
-    $summaryReport += "`nNo GPOs found with browser restrictions."
+    [void]$summaryReportBuilder.AppendLine("No GPOs found with browser restrictions.")
 }
 
-$summaryReport += @"
+[void]$summaryReportBuilder.AppendLine(@"
 
 ================================================================================
                               END OF REPORT
 ================================================================================
-"@
+"@)
 
 # Save summary report
-$summaryReport | Out-File -Path (Join-Path $ReportsPath "GPO_Summary_Report.txt")
+$summaryReportBuilder.ToString() | Out-File -Path (Join-Path $ReportsPath "GPO_Summary_Report.txt")
 
 # Generate HTML report
-$htmlReport = @"
+$htmlReportBuilder = New-Object System.Text.StringBuilder
+[void]$htmlReportBuilder.AppendLine(@"
 <!DOCTYPE html>
 <html>
 <head>
@@ -621,7 +623,7 @@ $htmlReport = @"
             <th>Categories</th>
             <th>Special Policies</th>
         </tr>
-"@
+"@)
 
 foreach ($gpo in $GPOInventory | Sort-Object DisplayName) {
     $specialPolicies = @()
@@ -631,7 +633,7 @@ foreach ($gpo in $GPOInventory | Sort-Object DisplayName) {
         $specialPolicies += "Browser Restrictions"
     }
     
-    $htmlReport += @"
+    [void]$htmlReportBuilder.AppendLine(@"
         <tr>
             <td>$($gpo.DisplayName)</td>
             <td>$($gpo.Status)</td>
@@ -640,16 +642,16 @@ foreach ($gpo in $GPOInventory | Sort-Object DisplayName) {
             <td>$($gpo.Categories)</td>
             <td>$($specialPolicies -join ', ')</td>
         </tr>
-"@
+"@)
 }
 
-$htmlReport += @"
+[void]$htmlReportBuilder.AppendLine(@"
     </table>
 </body>
 </html>
-"@
+"@)
 
-$htmlReport | Out-File -Path (Join-Path $ReportsPath "GPO_Inventory_Report.html")
+$htmlReportBuilder.ToString() | Out-File -Path (Join-Path $ReportsPath "GPO_Inventory_Report.html")
 
 # Display completion message
 Write-Host "`n========================================" -ForegroundColor Green

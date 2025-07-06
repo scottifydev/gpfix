@@ -408,9 +408,9 @@ switch ($Format) {
         foreach ($check in $PolicyStatus.HealthChecks) {
             Write-Host "$($check.Check): " -NoNewline
             switch ($check.Status) {
-                'Passed' { Write-Host "✓ PASSED" -ForegroundColor Green }
-                'Warning' { Write-Host "⚠ WARNING" -ForegroundColor Yellow }
-                'Failed' { Write-Host "✗ FAILED" -ForegroundColor Red }
+                'Passed' { Write-Host "[PASS] PASSED" -ForegroundColor Green }
+                'Warning' { Write-Host "[WARN] WARNING" -ForegroundColor Yellow }
+                'Failed' { Write-Host "[FAIL] FAILED" -ForegroundColor Red }
             }
             Write-Host "  Details: $($check.Details)" -ForegroundColor Gray
         }

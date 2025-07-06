@@ -26,7 +26,7 @@ param(
 Write-Host "=== Group Policy Codebase Integrity Test ===" -ForegroundColor Cyan
 Write-Host "Test Date: $(Get-Date)" -ForegroundColor Yellow
 Write-Host "Script Path: $ScriptPath" -ForegroundColor Yellow
-Write-Host "❌ ALL issues are BLOCKING - EVERYTHING must be GREEN!" -ForegroundColor Red
+Write-Host "[X] ALL issues are BLOCKING - EVERYTHING must be GREEN!" -ForegroundColor Red
 Write-Host ""
 
 # Initialize results
@@ -41,11 +41,52 @@ $testResults = @{
 function Test-ScriptSyntax {
     param([string]$FilePath)
     
+    # First try basic tokenization
     try {
-        $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $FilePath -Raw), [ref]$null)
+        $content = Get-Content $FilePath -Raw
+        $errors = $null
+        $tokens = $null
+        $null = [System.Management.Automation.PSParser]::Tokenize($content, [ref]$errors)
+        
+        if ($errors.Count -gt 0) {
+            $errorMessages = $errors | ForEach-Object { "Line $($_.Token.StartLine): $($_.Message)" }
+            return @{Success = $false; Error = $errorMessages -join "; "}
+        }
+    } catch {
+        return @{Success = $false; Error = "Tokenization failed: $($_.Exception.Message)"}
+    }
+    
+    # Then try full AST parsing for more thorough validation
+    try {
+        $parseErrors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $FilePath,
+            [ref]$null,
+            [ref]$parseErrors
+        )
+        
+        if ($parseErrors.Count -gt 0) {
+            $errorMessages = $parseErrors | ForEach-Object { 
+                "Line $($_.Extent.StartLineNumber): $($_.ErrorId) - $($_.Message)" 
+            }
+            return @{Success = $false; Error = $errorMessages -join "; "}
+        }
+    } catch {
+        return @{Success = $false; Error = "AST parsing failed: $($_.Exception.Message)"}
+    }
+    
+    # Finally, try to compile the script to catch runtime syntax errors
+    try {
+        $scriptBlock = [ScriptBlock]::Create($content)
         return @{Success = $true; Error = $null}
     } catch {
-        return @{Success = $false; Error = $_.Exception.Message}
+        # Extract line number from error if possible
+        $errorMsg = $_.Exception.Message
+        if ($_.Exception.ErrorRecord) {
+            $line = $_.Exception.ErrorRecord.InvocationInfo.ScriptLineNumber
+            $errorMsg = "Line ${line}: $errorMsg"
+        }
+        return @{Success = $false; Error = "Compilation failed: $errorMsg"}
     }
 }
 
@@ -106,6 +147,71 @@ function Test-CommonErrors {
     # Check for hardcoded passwords
     if ($content -match '(password|pwd)\s*=\s*["''][^"'']+["'']' -and $content -notmatch 'ConvertTo-SecureString') {
         $issues += "Possible hardcoded password detected"
+    }
+    
+    # Check for problematic Unicode characters
+    if ($content -match '[^\x00-\x7F]') {
+        $lines = $content -split "`n"
+        $lineNum = 1
+        foreach ($line in $lines) {
+            if ($line -match '[^\x00-\x7F]') {
+                $issues += "Line ${lineNum}: Contains non-ASCII characters that may cause issues"
+                break
+            }
+            $lineNum++
+        }
+    }
+    
+    # Check for here-string syntax issues
+    $hereStringIssues = Test-HereStringSyntax -Content $content
+    if ($hereStringIssues.Count -gt 0) {
+        $issues += $hereStringIssues
+    }
+    
+    return $issues
+}
+
+function Test-HereStringSyntax {
+    param([string]$Content)
+    
+    $issues = @()
+    $lines = $Content -split "`r?`n"
+    
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
+        $lineNum = $i + 1
+        
+        # Check for here-string opener
+        if ($line -match '@"') {
+            # Check if it's at the end of the line (allowing for whitespace)
+            if ($line -notmatch '@"\s*$') {
+                $issues += "Line ${lineNum}: Here-string opener @`" must be at the end of the line"
+            }
+            
+            # Look for the closing "@
+            $foundCloser = $false
+            for ($j = $i + 1; $j -lt $lines.Count; $j++) {
+                if ($lines[$j] -match '^"@') {
+                    $foundCloser = $true
+                    break
+                }
+                # Check for problematic patterns inside here-strings
+                if ($lines[$j] -match '^\s+"@$') {
+                    $issues += "Line $($j + 1): Here-string closer `"@ must be at the start of the line with no leading whitespace"
+                    $foundCloser = $true
+                    break
+                }
+            }
+            
+            if (-not $foundCloser) {
+                $issues += "Line ${lineNum}: Unclosed here-string starting at line $lineNum"
+            }
+        }
+        
+        # Check for orphaned here-string closers
+        if ($line -match '^"@' -and $i -eq 0) {
+            $issues += "Line ${lineNum}: Orphaned here-string closer `"@"
+        }
     }
     
     return $issues
@@ -198,7 +304,7 @@ function Test-GPOSpecificValidation {
         return $issues
     }
     catch {
-        Write-Host "  ⚠️ Error during GPO-specific validation: $_" -ForegroundColor Yellow
+        Write-Host "  [!] Error during GPO-specific validation: $_" -ForegroundColor Yellow
         return @("Failed to perform GPO-specific validation: $_")
     }
 }
@@ -220,9 +326,9 @@ foreach ($script in $scripts) {
     # Test 1: Syntax validation
     $syntaxResult = Test-ScriptSyntax -FilePath $script.FullName
     if ($syntaxResult.Success) {
-        Write-Host "  ✅ Syntax valid" -ForegroundColor Green
+        Write-Host "  [OK] Syntax valid" -ForegroundColor Green
     } else {
-        Write-Host "  ❌ Syntax error: $($syntaxResult.Error)" -ForegroundColor Red
+        Write-Host "  [X] Syntax error: $($syntaxResult.Error)" -ForegroundColor Red
         $testResults.Issues += "[$($script.Name)] Syntax error: $($syntaxResult.Error)"
         $testResults.Failed++
         continue
@@ -232,9 +338,9 @@ foreach ($script in $scripts) {
         # Test 2: Domain consistency
         $domainIssues = Test-DomainConsistency -FilePath $script.FullName
         if ($domainIssues.Count -eq 0) {
-            Write-Host "  ✅ Domain references consistent" -ForegroundColor Green
+            Write-Host "  [OK] Domain references consistent" -ForegroundColor Green
         } else {
-            Write-Host "  ❌ Domain issues found" -ForegroundColor Red
+            Write-Host "  [X] Domain issues found" -ForegroundColor Red
             foreach ($issue in $domainIssues) {
                 Write-Host "    - $issue" -ForegroundColor Red
                 $testResults.Issues += "[$($script.Name)] $issue"
@@ -245,9 +351,9 @@ foreach ($script in $scripts) {
         # Test 3: GPO name consistency
         $gpoIssues = Test-GPONameConsistency -FilePath $script.FullName
         if ($gpoIssues.Count -eq 0) {
-            Write-Host "  ✅ GPO names consistent" -ForegroundColor Green
+            Write-Host "  [OK] GPO names consistent" -ForegroundColor Green
         } else {
-            Write-Host "  ❌ GPO name inconsistency" -ForegroundColor Red
+            Write-Host "  [X] GPO name inconsistency" -ForegroundColor Red
             foreach ($issue in $gpoIssues) {
                 Write-Host "    - $issue" -ForegroundColor Red  # Changed from Yellow to Red
                 $testResults.Issues += "[$($script.Name)] $issue"
@@ -258,9 +364,9 @@ foreach ($script in $scripts) {
         # Test 4: Common errors
         $commonErrors = Test-CommonErrors -FilePath $script.FullName
         if ($commonErrors.Count -eq 0) {
-            Write-Host "  ✅ No common errors found" -ForegroundColor Green
+            Write-Host "  [OK] No common errors found" -ForegroundColor Green
         } else {
-            Write-Host "  ❌ Common errors detected" -ForegroundColor Red
+            Write-Host "  [X] Common errors detected" -ForegroundColor Red
             foreach ($issue in $commonErrors) {
                 Write-Host "    - $issue" -ForegroundColor Red
                 $testResults.Issues += "[$($script.Name)] $issue"
@@ -271,9 +377,9 @@ foreach ($script in $scripts) {
         # Test 5: GPO-specific validation
         $gpoIssues = Test-GPOSpecificValidation -FilePath $script.FullName
         if ($gpoIssues.Count -eq 0) {
-            Write-Host "  ✅ GPO-specific checks passed" -ForegroundColor Green
+            Write-Host "  [OK] GPO-specific checks passed" -ForegroundColor Green
         } else {
-            Write-Host "  ❌ GPO-specific issues found" -ForegroundColor Red
+            Write-Host "  [X] GPO-specific issues found" -ForegroundColor Red
             foreach ($issue in $gpoIssues) {
                 Write-Host "    - $issue" -ForegroundColor Red
                 $testResults.Issues += "[$($script.Name)] $issue"
@@ -298,7 +404,7 @@ if (Test-Path $browserPolPath) {
     Write-Host "`nChecking Browser-Restrictions.pol" -ForegroundColor White
     $content = Get-Content $browserPolPath -Raw
     if ($content -match 'Windows Registry Editor Version') {
-        Write-Host "  ❌ File is in .reg format (should use Set-BrowserRestrictions.ps1 instead)" -ForegroundColor Red
+        Write-Host "  [X] File is in .reg format (should use Set-BrowserRestrictions.ps1 instead)" -ForegroundColor Red
         $testResults.Failed++  # Changed from Warnings to Failed
         $testResults.Issues += "[Browser-Restrictions.pol] File in .reg format instead of binary .pol"
     }
@@ -307,9 +413,9 @@ if (Test-Path $browserPolPath) {
 # Check for Set-BrowserRestrictions.ps1
 $setBrowserPath = Join-Path $ScriptPath "Set-BrowserRestrictions.ps1"
 if (Test-Path $setBrowserPath) {
-    Write-Host "  ✅ Set-BrowserRestrictions.ps1 exists (replacement for .pol file)" -ForegroundColor Green
+    Write-Host "  [OK] Set-BrowserRestrictions.ps1 exists (replacement for .pol file)" -ForegroundColor Green
 } else {
-    Write-Host "  ❌ Set-BrowserRestrictions.ps1 not found" -ForegroundColor Red
+    Write-Host "  [X] Set-BrowserRestrictions.ps1 not found" -ForegroundColor Red
     $testResults.Failed++
 }
 
@@ -322,7 +428,7 @@ Write-Host "Failed: $($testResults.Failed)" -ForegroundColor $(if ($testResults.
 Write-Host "Total Issues: $($testResults.Issues.Count)" -ForegroundColor $(if ($testResults.Issues.Count -gt 0) { 'Red' } else { 'Green' })
 
 if ($testResults.Issues.Count -gt 0) {
-    Write-Host "`n❌ BLOCKING ISSUES FOUND:" -ForegroundColor Red
+    Write-Host "`n[X] BLOCKING ISSUES FOUND:" -ForegroundColor Red
     foreach ($issue in $testResults.Issues) {
         Write-Host "  - $issue" -ForegroundColor Red
     }
@@ -331,11 +437,11 @@ if ($testResults.Issues.Count -gt 0) {
 
 # Final result
 if ($testResults.Failed -gt 0 -or $testResults.Issues.Count -gt 0) {
-    Write-Host "`n❌ VALIDATION FAILED!" -ForegroundColor Red
+    Write-Host "`n[X] VALIDATION FAILED!" -ForegroundColor Red
     Write-Host "Fix ALL issues before deployment. There are NO acceptable warnings in production." -ForegroundColor Red
     Write-Host "Exit code: 2" -ForegroundColor Red
 } else {
-    Write-Host "`n✅ ALL TESTS PASSED!" -ForegroundColor Green
+    Write-Host "`n[OK] ALL TESTS PASSED!" -ForegroundColor Green
     Write-Host "Codebase is ready for deployment." -ForegroundColor Green
     Write-Host "Remember to test in a non-production environment first." -ForegroundColor Yellow
     Write-Host "Exit code: 0" -ForegroundColor Green

@@ -463,7 +463,10 @@ catch {
 # Generate HTML Report
 Write-Host "`nGenerating cleanup report..." -ForegroundColor Cyan
 
-$htmlReport = @"
+# Use StringBuilder for better performance
+$reportBuilder = New-Object System.Text.StringBuilder
+
+[void]$reportBuilder.AppendLine(@"
 <!DOCTYPE html>
 <html>
 <head>
@@ -541,6 +544,7 @@ $htmlReport = @"
             </div>
         </div>
 "@
+)
 
 # Add sections for each finding type
 $sections = @(
@@ -557,52 +561,52 @@ $sections = @(
 )
 
 foreach ($section in $sections) {
-    $htmlReport += "<h2>$($section.Title)</h2>"
+        [void]$reportBuilder.AppendLine("<h2>$($section.Title)</h2>")
     
     if ($section.Data.Count -eq 0) {
-        $htmlReport += "<div class='no-issues'>No issues found in this category</div>"
+        [void]$reportBuilder.AppendLine("<div class='no-issues'>No issues found in this category</div>")
     }
     else {
-        $htmlReport += "<table><thead><tr>"
+        [void]$reportBuilder.AppendLine("<table><thead><tr>")
         
         # Dynamic headers based on data type
         switch ($section.Type) {
             "SRP" {
-                $htmlReport += "<th>GPO Name</th><th>Creation Time</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Creation Time</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Unused" {
-                $htmlReport += "<th>GPO Name</th><th>Days Unlinked</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Days Unlinked</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Empty" {
-                $htmlReport += "<th>GPO Name</th><th>Creation Time</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Creation Time</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Broken" {
-                $htmlReport += "<th>GPO Name</th><th>Broken SIDs Count</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Broken SIDs Count</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Legacy" {
-                $htmlReport += "<th>GPO Name</th><th>Legacy Templates</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Legacy Templates</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "WMI" {
-                $htmlReport += "<th>GPO Name</th><th>Error</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Error</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Server" {
-                $htmlReport += "<th>GPO Name</th><th>Unreachable Servers</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Unreachable Servers</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "IE" {
-                $htmlReport += "<th>GPO Name</th><th>Creation Time</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Creation Time</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Deprecated" {
-                $htmlReport += "<th>GPO Name</th><th>Deprecated Features</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Deprecated Features</th><th>Risk Level</th><th>Recommendation</th>")
             }
             "Old" {
-                $htmlReport += "<th>GPO Name</th><th>Age (Days)</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>"
+                [void]$reportBuilder.AppendLine("<th>GPO Name</th><th>Age (Days)</th><th>Last Modified</th><th>Risk Level</th><th>Recommendation</th>")
             }
         }
         
-        $htmlReport += "</tr></thead><tbody>"
+        [void]$reportBuilder.AppendLine("</tr></thead><tbody>")
         
         foreach ($item in $section.Data) {
-            $htmlReport += "<tr>"
+            [void]$reportBuilder.AppendLine("<tr>")
             
             # Format risk level
             $riskClass = switch ($item.Risk.Level) {
@@ -614,91 +618,91 @@ foreach ($section in $sections) {
             # Dynamic row content based on data type
             switch ($section.Type) {
                 "SRP" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.CreationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.CreationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Unused" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.DaysUnlinked)</td>"
-                    $htmlReport += "<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.DaysUnlinked)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Empty" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.CreationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.CreationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Broken" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.Count)</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Count)</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Legacy" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.LegacyTemplates -join ', ')</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.LegacyTemplates -join ', ')</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "WMI" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.Error)</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Error)</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Server" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.References | ForEach-Object { $_.Server } | Select-Object -Unique | Join-String -Separator ', ')</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.References | ForEach-Object { $_.Server } | Select-Object -Unique | Join-String -Separator ', ')</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "IE" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.CreationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.CreationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Deprecated" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.Features | ForEach-Object { $_.Description } | Join-String -Separator '<br>')</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Features | ForEach-Object { $_.Description } | Join-String -Separator '<br>')</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
                 "Old" {
-                    $htmlReport += "<td>$($item.GPOName)</td>"
-                    $htmlReport += "<td>$($item.Age)</td>"
-                    $htmlReport += "<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>"
-                    $htmlReport += "<td><span class='$riskClass'>$($item.Risk.Level)</span></td>"
-                    $htmlReport += "<td>$($item.Risk.Recommendation)</td>"
+                    [void]$reportBuilder.AppendLine("<td>$($item.GPOName)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Age)</td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.ModificationTime.ToString('yyyy-MM-dd'))</td>")
+                    [void]$reportBuilder.AppendLine("<td><span class='$riskClass'>$($item.Risk.Level)</span></td>")
+                    [void]$reportBuilder.AppendLine("<td>$($item.Risk.Recommendation)</td>")
                 }
             }
             
-            $htmlReport += "</tr>"
+            [void]$reportBuilder.AppendLine("</tr>")
             
             # Add considerations row if risk assessment is enabled
             if ($IncludeRiskAssessment -and $item.Risk.Considerations.Count -gt 0) {
-                $htmlReport += "<tr><td colspan='5' class='considerations'><strong>Considerations:</strong> "
-                $htmlReport += "<ul>"
+                [void]$reportBuilder.AppendLine("<tr><td colspan='5' class='considerations'><strong>Considerations:</strong> ")
+                [void]$reportBuilder.AppendLine("<ul>")
                 foreach ($consideration in $item.Risk.Considerations) {
-                    $htmlReport += "<li>$consideration</li>"
+                    [void]$reportBuilder.AppendLine("<li>$consideration</li>")
                 }
-                $htmlReport += "</ul></td></tr>"
+                [void]$reportBuilder.AppendLine("</ul></td></tr>")
             }
         }
         
-        $htmlReport += "</tbody></table>"
+        [void]$reportBuilder.AppendLine("</tbody></table>")
     }
 }
 
 # Add cleanup recommendations
-$htmlReport += @"
+[void]$reportBuilder.AppendLine(@"
         <div class="export-section">
             <h2>Cleanup Recommendations</h2>
             <div class="recommendation">
@@ -743,11 +747,12 @@ $htmlReport += @"
 </body>
 </html>
 "@
+)
 
 # Save the report
 $reportFileName = "GP_LegacyGPO_Assessment_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
 $reportFullPath = Join-Path -Path $ReportPath -ChildPath $reportFileName
-$htmlReport | Out-File -FilePath $reportFullPath -Encoding UTF8
+$reportBuilder.ToString() | Out-File -FilePath $reportFullPath -Encoding UTF8
 
 # Also save a CSV summary for further analysis
 $csvSummary = @()

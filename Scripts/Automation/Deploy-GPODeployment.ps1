@@ -6,7 +6,7 @@
 .SYNOPSIS
     Automated Group Policy deployment with strict validation enforcement
 .DESCRIPTION
-    Implements the Research → Plan → Implement → Validate → Deploy workflow
+    Implements the Research -> Plan -> Implement -> Validate -> Deploy workflow
     with automatic validation checkpoints and rollback capabilities.
     ALL validation issues are BLOCKING - deployment stops on any failure.
 .PARAMETER GPOName
@@ -104,11 +104,11 @@ function Invoke-ValidationCheckpoint {
         
         if ($Result -is [hashtable] -and $Result.ContainsKey('Success')) {
             if ($Result.Success) {
-                Write-DeploymentLog "✓ Validation passed: $CheckpointName" -Level SUCCESS
+                Write-DeploymentLog "[OK] Validation passed: $CheckpointName" -Level SUCCESS
                 return $true
             }
             else {
-                Write-DeploymentLog "✗ Validation failed: $CheckpointName - $($Result.Message)" -Level ERROR
+                Write-DeploymentLog "[X] Validation failed: $CheckpointName - $($Result.Message)" -Level ERROR
                 $Script:ValidationFailures += @{
                     Checkpoint = $CheckpointName
                     Message = $Result.Message
@@ -125,7 +125,7 @@ function Invoke-ValidationCheckpoint {
         else {
             # Assume boolean result
             if ($Result) {
-                Write-DeploymentLog "✓ Validation passed: $CheckpointName" -Level SUCCESS
+                Write-DeploymentLog "[OK] Validation passed: $CheckpointName" -Level SUCCESS
                 return $true
             }
             else {
@@ -134,7 +134,7 @@ function Invoke-ValidationCheckpoint {
         }
     }
     catch {
-        Write-DeploymentLog "✗ Validation error: $CheckpointName - $_" -Level ERROR
+        Write-DeploymentLog "[X] Validation error: $CheckpointName - $_" -Level ERROR
         $Script:ValidationFailures += @{
             Checkpoint = $CheckpointName
             Message = $_.Exception.Message

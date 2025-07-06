@@ -437,8 +437,8 @@ function Export-OUTree {
             
             $BlockInfo = if ($Child.BlockInheritance) {" [Inheritance Blocked]"} else {""}
             
-            $TreeContent += "$Indent├── $($Child.Name)$GPOInfo$BlockInfo"
-            Get-OUChildren -Parent $Child -Indent "$Indent│   "
+            $TreeContent += "$Indent+-- $($Child.Name)$GPOInfo$BlockInfo"
+            Get-OUChildren -Parent $Child -Indent "$Indent|   "
         }
     }
     

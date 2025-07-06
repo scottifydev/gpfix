@@ -63,7 +63,7 @@ if (Test-Path $validationScript) {
             Write-Error "Codebase validation failed. Please fix all issues before deployment."
             exit 2
         }
-        Write-Host "✅ Codebase validation passed" -ForegroundColor Green
+        Write-Host "[OK] Codebase validation passed" -ForegroundColor Green
     } catch {
         Write-Error "Failed to run validation: $_"
         exit 2
@@ -133,7 +133,7 @@ try {
     if ($existingGpo -and -not $TestMode) {
         try {
             Backup-GPO -Name $GPOName -Path $backupPath -Comment "Pre-deployment backup" -ErrorAction Stop
-            Write-Host "✅ Backed up existing GPO to: $backupPath" -ForegroundColor Green
+            Write-Host "[OK] Backed up existing GPO to: $backupPath" -ForegroundColor Green
         } catch {
             Write-Error "Failed to backup existing GPO: $_"
             exit 2

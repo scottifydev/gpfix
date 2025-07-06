@@ -77,11 +77,11 @@ function Run-ValidationScript {
         
         if ($exitCode -eq 0) {
             $results.Passed++
-            $status = "✅ PASSED"
+            $status = "[OK] PASSED"
             $color = "Success"
         } else {
             $results.Failed++
-            $status = "❌ FAILED (Exit Code: $exitCode)"
+            $status = "[X] FAILED (Exit Code: $exitCode)"
             $color = "Error"
         }
         
@@ -97,7 +97,7 @@ function Run-ValidationScript {
         
     } catch {
         $results.Failed++
-        $status = "❌ ERROR: $($_.Exception.Message)"
+        $status = "[X] ERROR: $($_.Exception.Message)"
         
         $results.Details += [PSCustomObject]@{
             Script = $DisplayName
@@ -112,10 +112,10 @@ function Run-ValidationScript {
 
 # Main execution
 Write-ColorOutput @"
-╔══════════════════════════════════════════╗
-║      GROUP POLICY VALIDATION SUITE       ║
-║         Comprehensive Fix Checker        ║
-╚══════════════════════════════════════════╝
++==========================================+
+|      GROUP POLICY VALIDATION SUITE       |
+|         Comprehensive Fix Checker        |
++==========================================+
 "@ "Info"
 
 Write-Host "`nStarting validation sequence at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n"
@@ -149,34 +149,34 @@ foreach ($script in $validationScripts) {
         $results.Failed++
         $results.Details += [PSCustomObject]@{
             Script = $script.Name
-            Status = "❌ MISSING: Script not found at $($script.Path)"
+            Status = "[X] MISSING: Script not found at $($script.Path)"
             ExitCode = -1
             Passed = $false
         }
-        Write-ColorOutput "`n$($script.Name): ❌ MISSING" "Error"
+        Write-ColorOutput "`n$($script.Name): [X] MISSING" "Error"
     }
 }
 
 # Generate summary report
 Write-Host "`n`n"
-Write-ColorOutput "╔══════════════════════════════════════════╗" "Info"
-Write-ColorOutput "║           VALIDATION SUMMARY             ║" "Info"
-Write-ColorOutput "╚══════════════════════════════════════════╝" "Info"
+Write-ColorOutput "+==========================================+" "Info"
+Write-ColorOutput "|           VALIDATION SUMMARY             |" "Info"
+Write-ColorOutput "+==========================================+" "Info"
 
 Write-Host "`nExecution completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n"
 
 # Display detailed results
 Write-ColorOutput "Detailed Results:" "Info"
-Write-Host "─" * 60
+Write-Host "-" * 60
 
 foreach ($result in $results.Details) {
-    $icon = if ($result.Passed) { "✅" } else { "❌" }
+    $icon = if ($result.Passed) { "[OK]" } else { "[X]" }
     $color = if ($result.Passed) { "Success" } else { "Error" }
     Write-Host "$icon " -NoNewline
     Write-ColorOutput "$($result.Script)" $color
 }
 
-Write-Host "`n" + ("─" * 60)
+Write-Host "`n" + ("-" * 60)
 
 # Display statistics
 $passRate = if ($results.TotalChecks -gt 0) { 
@@ -187,19 +187,19 @@ $passRate = if ($results.TotalChecks -gt 0) {
 
 Write-ColorOutput "`nStatistics:" "Info"
 Write-Host "  Total Checks: $($results.TotalChecks)"
-Write-Host "  ✅ Passed: $($results.Passed)" -ForegroundColor Green
-Write-Host "  ❌ Failed: $($results.Failed)" -ForegroundColor Red
+Write-Host "  [OK] Passed: $($results.Passed)" -ForegroundColor Green
+Write-Host "  [X] Failed: $($results.Failed)" -ForegroundColor Red
 Write-Host "  Pass Rate: $passRate%"
 
 # Overall status
-Write-Host "`n" + ("═" * 60)
+Write-Host "`n" + ("=" * 60)
 if ($results.Failed -eq 0 -and $results.TotalChecks -gt 0) {
-    Write-ColorOutput "🎉 ALL CHECKS PASSED! The codebase is in good shape." "Success"
-    Write-ColorOutput "═" * 60 "Success"
+    Write-ColorOutput "ALL CHECKS PASSED! The codebase is in good shape." "Success"
+    Write-ColorOutput "=" * 60 "Success"
     exit 0
 } else {
-    Write-ColorOutput "⚠️  VALIDATION FAILED! $($results.Failed) check(s) need attention." "Error"
-    Write-ColorOutput "═" * 60 "Error"
+    Write-ColorOutput "[!] VALIDATION FAILED! $($results.Failed) check(s) need attention." "Error"
+    Write-ColorOutput "=" * 60 "Error"
     
     # Show which scripts failed
     Write-Host "`nFailed Scripts:"

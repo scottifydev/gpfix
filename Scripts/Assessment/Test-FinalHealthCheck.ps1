@@ -422,7 +422,7 @@ CRITICAL CHECKS:
 "@
 
 foreach ($Success in $Script:SuccessItems) {
-    $Checklist += "`n[✓] $Success"
+    $Checklist += "`n[OK] $Success"
 }
 
 foreach ($Warning in $Script:Warnings) {
@@ -430,20 +430,20 @@ foreach ($Warning in $Script:Warnings) {
 }
 
 foreach ($Failure in $Script:CriticalFailures) {
-    $Checklist += "`n[✗] $($Failure.Check) - $($Failure.Details)"
+    $Checklist += "`n[X] $($Failure.Check) - $($Failure.Details)"
 }
 
 $Checklist += @"
 
 DEPLOYMENT PREREQUISITES:
-[$(if ($Domain.DomainMode -ge [Microsoft.ActiveDirectory.Management.ADDomainMode]::Windows2012R2) {'✓'} else {'✗'})] Domain functional level 2012 R2 or higher
-[$(if ($TeenagerGroup) {'✓'} else {'✗'})] Teenagers security group exists
-[$(if ($OUCount -eq 3) {'✓'} else {'✗'})] All required OUs created
-[$(if ((Get-ChildItem -Path $BackupLocation -Directory -ErrorAction SilentlyContinue).Count -gt 0) {'✓'} else {'✗'})] GPO backups available
-[$(if ($ADMXFiles.Count -gt 20) {'✓'} else {'✗'})] ADMX templates installed
-[$(if ($ReplicationSuccess) {'✓'} else {'✗'})] SYSVOL replication healthy
-[$(if ($ExistingGPOs.Count -eq 0) {'✓'} else {'✗'})] No conflicting policies
-[$(if ($IsAdmin) {'✓'} else {'✗'})] Administrative permissions verified
+[$(if ($Domain.DomainMode -ge [Microsoft.ActiveDirectory.Management.ADDomainMode]::Windows2012R2) {'OK'} else {'X'})] Domain functional level 2012 R2 or higher
+[$(if ($TeenagerGroup) {'OK'} else {'X'})] Teenagers security group exists
+[$(if ($OUCount -eq 3) {'OK'} else {'X'})] All required OUs created
+[$(if ((Get-ChildItem -Path $BackupLocation -Directory -ErrorAction SilentlyContinue).Count -gt 0) {'OK'} else {'X'})] GPO backups available
+[$(if ($ADMXFiles.Count -gt 20) {'OK'} else {'X'})] ADMX templates installed
+[$(if ($ReplicationSuccess) {'OK'} else {'X'})] SYSVOL replication healthy
+[$(if ($ExistingGPOs.Count -eq 0) {'OK'} else {'X'})] No conflicting policies
+[$(if ($IsAdmin) {'OK'} else {'X'})] Administrative permissions verified
 
 RISK ASSESSMENT:
 - Critical Failures: $($Script:CriticalFailures.Count)
@@ -469,11 +469,11 @@ KEY FINDINGS:
 if ($DeploymentReady) {
     $ExecutiveSummary += @"
 
-✓ All critical systems checks passed
-✓ Infrastructure is properly configured
-✓ Backup and recovery mechanisms are in place
-✓ No conflicts with existing policies detected
-✓ Target organizational units and groups are ready
+[OK] All critical systems checks passed
+[OK] Infrastructure is properly configured
+[OK] Backup and recovery mechanisms are in place
+[OK] No conflicts with existing policies detected
+[OK] Target organizational units and groups are ready
 
 The environment is fully prepared for teenager-specific Group Policy deployment.
 Recommended next steps:
@@ -486,7 +486,7 @@ Recommended next steps:
 else {
     $ExecutiveSummary += @"
 
-✗ Critical issues prevent safe deployment:
+[X] Critical issues prevent safe deployment:
 "@
     foreach ($Failure in $Script:CriticalFailures) {
         $ExecutiveSummary += "`n  - $($Failure.Check): $($Failure.Details)"

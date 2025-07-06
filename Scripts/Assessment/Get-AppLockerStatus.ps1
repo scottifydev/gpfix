@@ -139,7 +139,7 @@ function Test-AppLockerService {
             
         } catch {
             Write-ColorOutput " [ERROR]" -Color Red
-            Add-Issue "Failed to check Application Identity service on $computer`: $_" "Service"
+            Add-Issue "Failed to check Application Identity service on ${computer}: $($_)" "Service"
         }
     }
     
@@ -298,7 +298,7 @@ function Test-AppLockerEventLogs {
                 
             } catch {
                 Write-ColorOutput " [ERROR]" -Color Red
-                Add-Issue "Failed to check $logName on $computer`: $_" "EventLog"
+                Add-Issue "Failed to check $logName on ${computer}: $($_)" "EventLog"
             }
         }
     }
@@ -357,7 +357,7 @@ function Test-AppLockerPolicyProcessing {
             
         } catch {
             Write-ColorOutput " [ERROR]" -Color Red
-            Add-Issue "Failed to check policy processing on $computer`: $_" "PolicyProcessing"
+            Add-Issue "Failed to check policy processing on ${computer}: $($_)" "PolicyProcessing"
         }
     }
     
@@ -410,7 +410,7 @@ function Test-AppLockerEnforcementMode {
             
         } catch {
             Write-ColorOutput " [ERROR]" -Color Red
-            Add-Issue "Failed to check enforcement mode on $computer`: $_" "Enforcement"
+            Add-Issue "Failed to check enforcement mode on ${computer}: $($_)" "Enforcement"
         }
     }
     
@@ -856,7 +856,8 @@ try {
     $reportPath = Join-Path $OutputPath "AppLocker_Assessment_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
     
     # Generate HTML report
-    $htmlReport = @"
+    $htmlBuilder = New-Object System.Text.StringBuilder
+    [void]$htmlBuilder.Append(@"
 <!DOCTYPE html>
 <html>
 <head>
@@ -887,11 +888,11 @@ try {
         <p class="warning">Warnings: $($Script:Warnings.Count)</p>
         <p class="recommendation">Recommendations: $($Script:Recommendations.Count)</p>
     </div>
-"@
+"@)
     
     # Add service status
     if ($serviceStatus) {
-        $htmlReport += @"
+        [void]$htmlBuilder.Append(@"
     <h2>Application Identity Service Status</h2>
     <table>
         <tr>
@@ -899,88 +900,88 @@ try {
             <th>Status</th>
             <th>Start Type</th>
         </tr>
-"@
+"@)
         foreach ($service in $serviceStatus) {
             $statusClass = if ($service.Status -eq 'Running') { 'ok' } else { 'issue' }
-            $htmlReport += @"
+            [void]$htmlBuilder.Append(@"
         <tr>
             <td>$($service.ComputerName)</td>
             <td class="$statusClass">$($service.Status)</td>
             <td>$($service.StartType)</td>
         </tr>
-"@
+"@)
         }
-        $htmlReport += "</table>"
+        [void]$htmlBuilder.Append("</table>")
     }
     
     # Add rule summary
     if ($coverage) {
-        $htmlReport += @"
+        [void]$htmlBuilder.Append(@"
     <h2>Rule Coverage Analysis</h2>
     <table>
         <tr>
             <th>Rule Type</th>
             <th>Count</th>
         </tr>
-"@
+"@)
         foreach ($type in $coverage.RulesByType.Keys) {
-            $htmlReport += @"
+            [void]$htmlBuilder.Append(@"
         <tr>
             <td>$type</td>
             <td>$($coverage.RulesByType[$type])</td>
         </tr>
-"@
+"@)
         }
-        $htmlReport += @"
+        [void]$htmlBuilder.Append(@"
     </table>
     <p>Total Allow Rules: $($coverage.AllowRules)</p>
     <p>Total Deny Rules: $($coverage.DenyRules)</p>
-"@
+"@)
     }
     
     # Add issues
     if ($Script:Issues.Count -gt 0) {
-        $htmlReport += "<h2 class='issue'>Critical Issues</h2><ul>"
+        [void]$htmlBuilder.Append("<h2 class='issue'>Critical Issues</h2><ul>")
         $Script:Issues | ForEach-Object {
-            $htmlReport += "<li class='issue'>[$($_.Category)] $($_.Issue)</li>"
+            [void]$htmlBuilder.Append("<li class='issue'>[$($_.Category)] $($_.Issue)</li>")
         }
-        $htmlReport += "</ul>"
+        [void]$htmlBuilder.Append("</ul>")
     }
     
     # Add warnings
     if ($Script:Warnings.Count -gt 0) {
-        $htmlReport += "<h2 class='warning'>Warnings</h2><ul>"
+        [void]$htmlBuilder.Append("<h2 class='warning'>Warnings</h2><ul>")
         $Script:Warnings | ForEach-Object {
-            $htmlReport += "<li class='warning'>[$($_.Category)] $($_.Warning)</li>"
+            [void]$htmlBuilder.Append("<li class='warning'>[$($_.Category)] $($_.Warning)</li>")
         }
-        $htmlReport += "</ul>"
+        [void]$htmlBuilder.Append("</ul>")
     }
     
     # Add recommendations
     if ($Script:Recommendations.Count -gt 0) {
-        $htmlReport += "<h2 class='recommendation'>Recommendations</h2><ul>"
+        [void]$htmlBuilder.Append("<h2 class='recommendation'>Recommendations</h2><ul>")
         $Script:Recommendations | ForEach-Object {
-            $htmlReport += "<li class='recommendation'>[$($_.Category)] $($_.Recommendation)</li>"
+            [void]$htmlBuilder.Append("<li class='recommendation'>[$($_.Category)] $($_.Recommendation)</li>")
         }
-        $htmlReport += "</ul>"
+        [void]$htmlBuilder.Append("</ul>")
     }
     
     # Add teenager recommendations
     if ($Script:TeenagerPolicyRecommendations.Count -gt 0) {
-        $htmlReport += "<h2 class='teenager'>Teenager Policy Deployment Recommendations</h2><ul>"
+        [void]$htmlBuilder.Append("<h2 class='teenager'>Teenager Policy Deployment Recommendations</h2><ul>")
         $Script:TeenagerPolicyRecommendations | ForEach-Object {
-            $htmlReport += "<li class='teenager'>$_</li>"
+            [void]$htmlBuilder.Append("<li class='teenager'>$_</li>")
         }
-        $htmlReport += "</ul>"
+        [void]$htmlBuilder.Append("</ul>")
     }
     
-    $htmlReport += @"
+    [void]$htmlBuilder.Append(@"
 </body>
 </html>
-"@
+"@)
     
     # Save report
-    $htmlReport | Out-File -FilePath $reportPath -Encoding UTF8
+    $htmlBuilder.ToString() | Out-File -FilePath $reportPath -Encoding UTF8
     Write-ColorOutput "`nDetailed report saved to: $reportPath" -Color Green
     
     # Export data for further analysis
